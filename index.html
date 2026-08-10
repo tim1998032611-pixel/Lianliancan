@@ -1223,7 +1223,7 @@ function renderCustomers(){
 }
 
 function renderRecFilters(){
-  const opts = ['全部','未收到','已收部分','已收到'];
+  const opts = ['全部','本月有叫料','未收到','已收部分','已收到'];
   $('recFilters').innerHTML = opts.map(s =>
     `<span class="chip ${recFilter===s?'active':''}" data-rf="${s}">${s}</span>`
   ).join('');
@@ -1282,10 +1282,17 @@ function renderBillingOverview(){
 
 function renderReceivables(){
   let list = receivables.slice().sort((a,b)=> (a.customer||'').localeCompare(b.customer||''));
-  list = list.filter(r => recFilter==='全部' || r.progress===recFilter);
+  if(recFilter==='本月有叫料'){
+    const mr = getMonthRange(new Date());
+    list = list.filter(r => customerHasOrderInRange(r.customer, mr.start, mr.end));
+  } else {
+    list = list.filter(r => recFilter==='全部' || r.progress===recFilter);
+  }
 
   if(list.length===0){
-    $('recList').innerHTML = `<div class="empty"><b>還沒有收款紀錄</b>點選「＋ 新增帳款」開始追蹤客戶的收款狀況。</div>`;
+    $('recList').innerHTML = recFilter==='本月有叫料'
+      ? `<div class="empty"><b>本月目前沒有客戶叫料</b>切回「全部」可以看到所有客戶資料（含工地單價）。</div>`
+      : `<div class="empty"><b>還沒有收款紀錄</b>點選「＋ 新增帳款」開始追蹤客戶的收款狀況。</div>`;
     return;
   }
   $('recList').innerHTML = list.map(r => {
